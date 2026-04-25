@@ -9,25 +9,25 @@ datasource db {
 }
 
 enum Role {
-  HACKER
-  ORGANISER
-  ADMIN
+  HACKER    @map("hacker")
+  ORGANISER @map("organiser")
+  ADMIN     @map("admin")
 }
 
 enum EventStatus {
-  DRAFT
-  OPEN
-  ONGOING
-  JUDGING
-  CLOSED
+  DRAFT   @map("draft")
+  OPEN    @map("open")
+  ONGOING @map("ongoing")
+  JUDGING @map("judging")
+  CLOSED  @map("closed")
 }
 
 enum ProjectStatus {
-  DRAFT
-  SUBMITTED
-  REVIEWED
-  FINALIST
-  WINNER
+  DRAFT     @map("draft")
+  SUBMITTED @map("submitted")
+  REVIEWED  @map("reviewed")
+  FINALIST  @map("finalist")
+  WINNER    @map("winner")
 }
 
 model Profile {
