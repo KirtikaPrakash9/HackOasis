@@ -1,43 +1,62 @@
-import { z } from 'zod'
-import { prisma } from '@/lib/prisma'
+import { EventStatus } from '@prisma/client'
+import { getPrismaClient } from '@/lib/prisma'
 import { slugify } from '@/lib/utils'
-
-const createEventSchema = z.object({
-  title: z.string().min(3),
-  description: z.string().optional(),
-  location: z.string().optional(),
-  startDate: z.string().optional(),
-  endDate: z.string().optional(),
-  submissionDeadline: z.string().optional(),
-  maxTeamSize: z.coerce.number().int().min(1).max(10).default(4),
-  status: z.enum(['DRAFT', 'OPEN', 'ONGOING', 'JUDGING', 'CLOSED']).default('DRAFT'),
-  aiJudgingEnabled: z.boolean().default(false),
-  tags: z.array(z.string()).default([]),
-})
+import { createEventSchema, PUBLIC_EVENT_STATUSES, updateEventSchema } from '@/lib/validation/events'
 
 export async function listPublicEvents() {
-  try {
-    return await prisma.event.findMany({
-      where: { status: { not: 'DRAFT' } },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        description: true,
-        location: true,
-        startDate: true,
-        endDate: true,
-        status: true,
-        tags: true,
+  const prisma = getPrismaClient()
+  return prisma.event.findMany({
+    where: { status: { in: PUBLIC_EVENT_STATUSES.map((status) => status as EventStatus) } },
+    orderBy: { createdAt: 'desc' },
+    select: {
+      id: true,
+      title: true,
+      slug: true,
+      description: true,
+      location: true,
+      startDate: true,
+      endDate: true,
+      status: true,
+      tags: true,
+    },
+  })
+}
+
+export async function listOwnEvents(organiserId: string) {
+  const prisma = getPrismaClient()
+  return prisma.event.findMany({
+    where: { organiserId },
+    orderBy: { createdAt: 'desc' },
+    include: {
+      _count: {
+        select: {
+          registrations: true,
+          teams: true,
+          projects: true,
+        },
       },
-    })
-  } catch {
-    return []
-  }
+    },
+  })
+}
+
+export async function getEventBySlug(slug: string) {
+  const prisma = getPrismaClient()
+  return prisma.event.findUnique({
+    where: { slug },
+    include: {
+      _count: {
+        select: {
+          registrations: true,
+          teams: true,
+          projects: true,
+        },
+      },
+    },
+  })
 }
 
 export async function createEvent(input: unknown, organiserId: string) {
+  const prisma = getPrismaClient()
   const parsed = createEventSchema.parse(input)
 
   const baseSlug = slugify(parsed.title)
@@ -76,5 +95,65 @@ export async function createEvent(input: unknown, organiserId: string) {
       aiJudgingEnabled: parsed.aiJudgingEnabled,
       tags: parsed.tags,
     },
+  })
+}
+
+export async function updateEvent(eventId: string, organiserId: string, input: unknown) {
+  const prisma = getPrismaClient()
+  const parsed = updateEventSchema.parse(input)
+
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { organiserId: true, status: true },
+  })
+
+  if (!event || event.organiserId !== organiserId) {
+    throw new Error('Event not found or unauthorized')
+  }
+
+  const data: Record<string, unknown> = {}
+  if (parsed.title !== undefined) data.title = parsed.title
+  if (parsed.description !== undefined) data.description = parsed.description
+  if (parsed.location !== undefined) data.location = parsed.location
+  if (parsed.startDate !== undefined) data.startDate = parsed.startDate ? new Date(parsed.startDate) : null
+  if (parsed.endDate !== undefined) data.endDate = parsed.endDate ? new Date(parsed.endDate) : null
+  if (parsed.submissionDeadline !== undefined) data.submissionDeadline = parsed.submissionDeadline ? new Date(parsed.submissionDeadline) : null
+  if (parsed.maxTeamSize !== undefined) data.maxTeamSize = parsed.maxTeamSize
+  if (parsed.aiJudgingEnabled !== undefined) data.aiJudgingEnabled = parsed.aiJudgingEnabled
+  if (parsed.tags !== undefined) data.tags = parsed.tags
+  if (parsed.status !== undefined) data.status = parsed.status
+
+  return prisma.event.update({
+    where: { id: eventId },
+    data,
+  })
+}
+
+export async function registerForEvent(eventId: string, userId: string) {
+  const prisma = getPrismaClient()
+
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+    select: { status: true },
+  })
+
+  if (!event || event.status !== EventStatus.OPEN) {
+    throw new Error('Event is not open for registration')
+  }
+
+  return prisma.eventRegistration.upsert({
+    where: { eventId_userId: { eventId, userId } },
+    update: {},
+    create: {
+      eventId,
+      userId,
+    },
+  })
+}
+
+export async function unregisterFromEvent(eventId: string, userId: string) {
+  const prisma = getPrismaClient()
+  return prisma.eventRegistration.deleteMany({
+    where: { eventId, userId },
   })
 }

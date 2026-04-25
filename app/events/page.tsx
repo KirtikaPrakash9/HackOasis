@@ -2,6 +2,8 @@ import { listPublicEvents } from '@/actions/events'
 import { BrutalBadge } from '@/components/brutal/BrutalBadge'
 import { BrutalCard } from '@/components/brutal/BrutalCard'
 
+export const dynamic = 'force-dynamic'
+
 export default async function EventsPage() {
   const events = await listPublicEvents()
 
