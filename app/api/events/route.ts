@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { createEvent, listPublicEvents } from '@/actions/events'
+import { createClient } from '@/lib/supabase/server'
 
 export async function GET() {
   try {
@@ -13,8 +14,17 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
+    }
+
     const payload = await req.json()
-    const event = await createEvent(payload)
+    const event = await createEvent(payload, user.id)
     return NextResponse.json({ data: event }, { status: 201 })
   } catch (error) {
     if (error instanceof ZodError) {

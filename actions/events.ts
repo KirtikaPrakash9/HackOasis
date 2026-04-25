@@ -3,7 +3,6 @@ import { prisma } from '@/lib/prisma'
 import { slugify } from '@/lib/utils'
 
 const createEventSchema = z.object({
-  organiserId: z.string().uuid(),
   title: z.string().min(3),
   description: z.string().optional(),
   location: z.string().optional(),
@@ -38,21 +37,33 @@ export async function listPublicEvents() {
   }
 }
 
-export async function createEvent(input: unknown) {
+export async function createEvent(input: unknown, organiserId: string) {
   const parsed = createEventSchema.parse(input)
 
   const baseSlug = slugify(parsed.title)
-  let slug = baseSlug
-  let i = 1
+  const existingSlugs = await prisma.event.findMany({
+    where: { slug: { startsWith: baseSlug } },
+    select: { slug: true },
+  })
 
-  while (await prisma.event.findUnique({ where: { slug } })) {
-    slug = `${baseSlug}-${i}`
-    i += 1
+  const used = new Set(existingSlugs.map((item) => item.slug))
+  const suffixes = [...used]
+    .map((value) => {
+      if (value === baseSlug) return 0
+      const match = value.match(new RegExp(`^${baseSlug}-(\\d+)$`))
+      return match ? Number.parseInt(match[1], 10) : null
+    })
+    .filter((value): value is number => value !== null)
+  const nextSuffix = suffixes.length > 0 ? Math.max(...suffixes) + 1 : 0
+  const slug = nextSuffix === 0 && !used.has(baseSlug) ? baseSlug : `${baseSlug}-${nextSuffix || 1}`
+
+  if (used.has(slug)) {
+    throw new Error('Could not generate unique event slug')
   }
 
   return prisma.event.create({
     data: {
-      organiserId: parsed.organiserId,
+      organiserId,
       title: parsed.title,
       slug,
       description: parsed.description,

@@ -8,7 +8,6 @@ import { BrutalButton } from '@/components/brutal/BrutalButton'
 import { BrutalInput } from '@/components/brutal/BrutalInput'
 
 const schema = z.object({
-  organiserId: z.string().uuid('Use a valid organiser UUID'),
   title: z.string().min(3, 'Title is required'),
   description: z.string().optional(),
   location: z.string().optional(),
@@ -67,12 +66,6 @@ export default function CreateEventPage() {
       <hr className="hr-brutal my-6" />
 
       <form onSubmit={handleSubmit(onSubmit)} className="card-brutal space-y-4 p-6">
-        <div>
-          <label className="label-caps text-xs">Organiser ID (UUID)</label>
-          <BrutalInput placeholder="00000000-0000-0000-0000-000000000000" {...register('organiserId')} />
-          {errors.organiserId ? <p className="mt-1 text-sm text-hack-orange">{errors.organiserId.message}</p> : null}
-        </div>
-
         <div>
           <label className="label-caps text-xs">Title</label>
           <BrutalInput placeholder="HackOasis Dubai 2026" {...register('title')} />
