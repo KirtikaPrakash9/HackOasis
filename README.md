@@ -4,7 +4,7 @@ AI-powered hackathon management and talent hub for the UAE/MENA region.
 
 ## Stack
 
-- Next.js 14 (App Router) + TypeScript
+- Next.js 15 (App Router) + TypeScript
 - Tailwind CSS v3
 - Supabase (Auth, PostgreSQL, Storage, Realtime)
 - Prisma ORM
