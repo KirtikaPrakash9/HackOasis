@@ -9,25 +9,31 @@ export const dynamic = 'force-dynamic'
 export default async function EventDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  let userId: string | undefined
+  try {
+    const supabase = await createClient()
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+    userId = user?.id
+  } catch (error) {
+    console.error('EventDetailPage auth unavailable, continuing with anonymous mode', error)
+  }
 
-  const event = await getEventBySlug(slug, user?.id)
+  const event = await getEventBySlug(slug, userId)
 
   if (!event) {
     notFound()
   }
 
   let initiallyRegistered = false
-  if (user) {
+  if (userId && !event.id.startsWith('mock-')) {
     const prisma = getPrismaClient()
     const registration = await prisma.eventRegistration.findUnique({
       where: {
         eventId_userId: {
           eventId: event.id,
-          userId: user.id,
+          userId,
         },
       },
       select: { id: true },
@@ -53,7 +59,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ sl
             <span className="font-bold">Registrations:</span> {event._count.registrations}
           </p>
         </div>
-        <EventRegistrationButton slug={slug} initiallyRegistered={initiallyRegistered} isAuthenticated={Boolean(user)} />
+        <EventRegistrationButton
+          slug={slug}
+          initiallyRegistered={initiallyRegistered}
+          isAuthenticated={Boolean(userId)}
+          canRegister={!event.id.startsWith('mock-') && event.status === 'OPEN'}
+        />
       </div>
     </main>
   )

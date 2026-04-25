@@ -7,6 +7,7 @@ export const dynamic = 'force-dynamic'
 
 export default async function EventsPage() {
   const events = await listPublicEvents()
+  const showingMock = events.some((event) => event.id.startsWith('mock-'))
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-6 py-10">
@@ -15,6 +16,9 @@ export default async function EventsPage() {
         <p className="label-caps rotate-2 text-xs">PHASE 2 · CORE MVP</p>
       </div>
       <hr className="hr-brutal mb-8" />
+      {showingMock ? (
+        <p className="mb-4 text-sm text-hack-orange">Showing demo mock data (database unavailable).</p>
+      ) : null}
 
       {events.length === 0 ? (
         <BrutalCard className="p-8">

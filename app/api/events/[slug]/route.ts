@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ZodError } from 'zod'
 import { EventStatus } from '@prisma/client'
 import { ensureProfileExists } from '@/lib/auth'
+import { getMockEventBySlug } from '@/lib/mock-data'
 import { getPrismaClient } from '@/lib/prisma'
 import { createClient } from '@/lib/supabase/server'
 import { PUBLIC_EVENT_STATUSES, updateEventSchema } from '@/lib/validation/events'
@@ -10,10 +11,16 @@ import { updateEvent } from '@/actions/events'
 export async function GET(_req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
   try {
     const { slug } = await params
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    let userId: string | undefined
+    try {
+      const supabase = await createClient()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      userId = user?.id
+    } catch (error) {
+      console.error('GET /api/events/[slug] auth unavailable, continuing anonymous', error)
+    }
     const prisma = getPrismaClient()
     const event = await prisma.event.findFirst({
       where: {
@@ -22,7 +29,7 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
           {
             status: { in: PUBLIC_EVENT_STATUSES.map((status) => status as EventStatus) },
           },
-          ...(user ? [{ organiserId: user.id }] : []),
+          ...(userId ? [{ organiserId: userId }] : []),
         ],
       },
       include: {
@@ -37,7 +44,11 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ slu
     })
 
     if (!event) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+      const mockEvent = getMockEventBySlug(slug)
+      if (!mockEvent) {
+        return NextResponse.json({ error: 'Event not found' }, { status: 404 })
+      }
+      return NextResponse.json({ data: mockEvent })
     }
 
     return NextResponse.json({ data: event })

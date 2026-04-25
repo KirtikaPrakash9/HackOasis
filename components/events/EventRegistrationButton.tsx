@@ -8,15 +8,21 @@ type Props = {
   slug: string
   initiallyRegistered: boolean
   isAuthenticated: boolean
+  canRegister: boolean
 }
 
-export function EventRegistrationButton({ slug, initiallyRegistered, isAuthenticated }: Props) {
+export function EventRegistrationButton({ slug, initiallyRegistered, isAuthenticated, canRegister }: Props) {
   const router = useRouter()
   const [registered, setRegistered] = useState(initiallyRegistered)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const toggle = async () => {
+    if (!canRegister) {
+      setError('Registration is disabled in mock/demo mode or for this event status.')
+      return
+    }
+
     if (!isAuthenticated) {
       router.push(`/signin?next=/events/${slug}`)
       return

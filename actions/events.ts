@@ -1,5 +1,6 @@
 import { EventStatus } from '@prisma/client'
 import { getPrismaClient } from '@/lib/prisma'
+import { getMockEventBySlug, getMockOwnEvents, getMockPublicEvents } from '@/lib/mock-data'
 import { slugify } from '@/lib/utils'
 import { createEventSchema, PUBLIC_EVENT_STATUSES, updateEventSchema } from '@/lib/validation/events'
 
@@ -12,61 +13,76 @@ const allowedTransitions: Record<EventStatus, EventStatus[]> = {
 }
 
 export async function listPublicEvents() {
-  const prisma = getPrismaClient()
-  return prisma.event.findMany({
-    where: { status: { in: PUBLIC_EVENT_STATUSES.map((status) => status as EventStatus) } },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      title: true,
-      slug: true,
-      description: true,
-      location: true,
-      startDate: true,
-      endDate: true,
-      status: true,
-      tags: true,
-    },
-  })
+  try {
+    const prisma = getPrismaClient()
+    return await prisma.event.findMany({
+      where: { status: { in: PUBLIC_EVENT_STATUSES.map((status) => status as EventStatus) } },
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        description: true,
+        location: true,
+        startDate: true,
+        endDate: true,
+        status: true,
+        tags: true,
+      },
+    })
+  } catch (error) {
+    console.error('listPublicEvents fallback to mock data', error)
+    return getMockPublicEvents()
+  }
 }
 
 export async function listOwnEvents(organiserId: string) {
-  const prisma = getPrismaClient()
-  return prisma.event.findMany({
-    where: { organiserId },
-    orderBy: { createdAt: 'desc' },
-    include: {
-      _count: {
-        select: {
-          registrations: true,
-          teams: true,
-          projects: true,
+  try {
+    const prisma = getPrismaClient()
+    return await prisma.event.findMany({
+      where: { organiserId },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        _count: {
+          select: {
+            registrations: true,
+            teams: true,
+            projects: true,
+          },
         },
       },
-    },
-  })
+    })
+  } catch (error) {
+    console.error('listOwnEvents fallback to mock data', error)
+    return getMockOwnEvents(organiserId)
+  }
 }
 
 export async function getEventBySlug(slug: string, viewerId?: string) {
-  const prisma = getPrismaClient()
-  return prisma.event.findFirst({
-    where: {
-      slug,
-      OR: [
-        { status: { in: PUBLIC_EVENT_STATUSES.map((status) => status as EventStatus) } },
-        ...(viewerId ? [{ organiserId: viewerId }] : []),
-      ],
-    },
-    include: {
-      _count: {
-        select: {
-          registrations: true,
-          teams: true,
-          projects: true,
+  try {
+    const prisma = getPrismaClient()
+    return await prisma.event.findFirst({
+      where: {
+        slug,
+        OR: [
+          { status: { in: PUBLIC_EVENT_STATUSES.map((status) => status as EventStatus) } },
+          ...(viewerId ? [{ organiserId: viewerId }] : []),
+        ],
+      },
+      include: {
+        _count: {
+          select: {
+            registrations: true,
+            teams: true,
+            projects: true,
+          },
         },
       },
-    },
-  })
+    })
+  } catch (error) {
+    console.error('getEventBySlug fallback to mock data', error)
+    return getMockEventBySlug(slug)
+  }
 }
 
 export async function createEvent(input: unknown, organiserId: string) {

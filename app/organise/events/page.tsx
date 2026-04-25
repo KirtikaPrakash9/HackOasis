@@ -18,6 +18,7 @@ export default async function OrganiserEventsPage() {
   }
 
   const events = await listOwnEvents(user.id)
+  const showingMock = events.some((event) => event.id.startsWith('mock-'))
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-6xl px-6 py-10">
@@ -28,6 +29,7 @@ export default async function OrganiserEventsPage() {
         </Link>
       </div>
       <hr className="hr-brutal mb-8" />
+      {showingMock ? <p className="mb-4 text-sm text-hack-orange">Showing demo mock organiser data.</p> : null}
 
       {events.length === 0 ? (
         <BrutalCard className="p-8">No events created yet.</BrutalCard>

@@ -40,6 +40,14 @@ npm run build
 
 `npm run build` runs `prisma generate` first to avoid stale Prisma client issues on Vercel.
 
+## Mock Data Demo Flow
+
+- If database/auth envs are unavailable, events pages automatically fall back to rich mock data for demoing the product flow.
+- Mock data is wired for:
+  - Events listing (`/events`)
+  - Event detail (`/events/[slug]`)
+  - Organiser events dashboard (`/organise/events`)
+
 ## Database
 
 - Prisma schema: `prisma/schema.prisma`
