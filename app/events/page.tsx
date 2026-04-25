@@ -1,6 +1,7 @@
 import { listPublicEvents } from '@/actions/events'
 import { BrutalBadge } from '@/components/brutal/BrutalBadge'
 import { BrutalCard } from '@/components/brutal/BrutalCard'
+import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,6 +31,9 @@ export default async function EventsPage() {
                 <BrutalBadge>{event.status}</BrutalBadge>
                 {event.location ? <BrutalBadge tone="primary">{event.location}</BrutalBadge> : null}
               </div>
+              <Link href={`/events/${event.slug}`} className="mt-4 inline-block text-sm underline">
+                View details
+              </Link>
             </BrutalCard>
           ))}
         </div>

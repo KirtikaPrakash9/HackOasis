@@ -31,6 +31,18 @@ export default function Home() {
           </Link>
         </div>
       </div>
+
+      <div className="flex flex-wrap gap-3">
+        <Link href="/signin">
+          <BrutalButton>Sign In</BrutalButton>
+        </Link>
+        <Link href="/signup">
+          <BrutalButton variant="primary">Sign Up</BrutalButton>
+        </Link>
+        <Link href="/organise/events">
+          <BrutalButton variant="orange">Organiser Dashboard</BrutalButton>
+        </Link>
+      </div>
     </main>
   )
 }

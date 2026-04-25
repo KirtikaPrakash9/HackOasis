@@ -3,6 +3,14 @@ import { getPrismaClient } from '@/lib/prisma'
 import { slugify } from '@/lib/utils'
 import { createEventSchema, PUBLIC_EVENT_STATUSES, updateEventSchema } from '@/lib/validation/events'
 
+const allowedTransitions: Record<EventStatus, EventStatus[]> = {
+  DRAFT: ['DRAFT', 'OPEN', 'CLOSED'],
+  OPEN: ['OPEN', 'ONGOING', 'CLOSED'],
+  ONGOING: ['ONGOING', 'JUDGING', 'CLOSED'],
+  JUDGING: ['JUDGING', 'CLOSED'],
+  CLOSED: ['CLOSED'],
+}
+
 export async function listPublicEvents() {
   const prisma = getPrismaClient()
   return prisma.event.findMany({
@@ -39,10 +47,16 @@ export async function listOwnEvents(organiserId: string) {
   })
 }
 
-export async function getEventBySlug(slug: string) {
+export async function getEventBySlug(slug: string, viewerId?: string) {
   const prisma = getPrismaClient()
-  return prisma.event.findUnique({
-    where: { slug },
+  return prisma.event.findFirst({
+    where: {
+      slug,
+      OR: [
+        { status: { in: PUBLIC_EVENT_STATUSES.map((status) => status as EventStatus) } },
+        ...(viewerId ? [{ organiserId: viewerId }] : []),
+      ],
+    },
     include: {
       _count: {
         select: {
@@ -109,6 +123,10 @@ export async function updateEvent(eventId: string, organiserId: string, input: u
 
   if (!event || event.organiserId !== organiserId) {
     throw new Error('Event not found or unauthorized')
+  }
+
+  if (parsed.status && !allowedTransitions[event.status].includes(parsed.status)) {
+    throw new Error(`Invalid status transition from ${event.status} to ${parsed.status}`)
   }
 
   const data: Record<string, unknown> = {}
