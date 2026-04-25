@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@import '@fontsource/dm-mono/400.css';
+@import '@fontsource/dm-mono/500.css';
+@import '@fontsource/instrument-sans/400.css';
+@import '@fontsource/instrument-sans/500.css';
+@import '@fontsource/instrument-sans/600.css';
+@import '@fontsource/instrument-sans/700.css';
+
+:root {
+  color-scheme: light;
+}
+
+body {
+  @apply bg-hack-cream text-hack-black font-sans;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.label-caps {
+  @apply font-mono uppercase tracking-wide;
+}
+
+.hr-brutal {
+  @apply border-0 border-t-[4px] border-hack-black;
+}
+
+.btn-brutal {
+  @apply border-2 border-hack-black bg-hack-cream shadow-brutal transition-all duration-150 ease-in-out rounded-[4px];
+}
+
+.btn-brutal:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0px #0a0a0a;
+}
+
+.btn-brutal:active {
+  transform: translate(4px, 4px);
+  box-shadow: 0px 0px 0px #0a0a0a;
+}
+
+.input-brutal {
+  @apply border-2 border-hack-black bg-hack-cream shadow-brutal rounded-[4px] px-3 py-2;
+}
+
+.card-brutal {
+  @apply border-[3px] border-hack-black shadow-brutal bg-hack-cream;
+}
